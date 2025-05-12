@@ -17,6 +17,16 @@ if search_btn and keyword:
         rakuten = search_rakuten(keyword)
         yahoo = search_yahoo(keyword)
         all_results = amazon + rakuten + yahoo
-        df = pd.DataFrame(all_results).sort_values("价格", key=lambda x: x.str.replace("¥", "").str.replace(",", "").astype(float))
-        st.success(f"共获取 {len(df)} 条结果")
-        st.dataframe(df, use_container_width=True)
+        df = pd.DataFrame(all_results)
+
+        if "价格" in df.columns and not df.empty:
+            try:
+                df["价格_数值"] = df["价格"].str.replace("¥", "").str.replace(",", "").astype(float)
+                df = df.sort_values("价格_数值")
+                st.success(f"共获取 {len(df)} 条结果（已按价格升序排列）")
+                st.dataframe(df.drop(columns="价格_数值"), use_container_width=True)
+            except Exception as e:
+                st.warning(f"⚠️ 排序时发生错误：{e}")
+                st.dataframe(df, use_container_width=True)
+        else:
+            st.warning("❗未能抓取包含价格的数据，请检查关键词或平台状态。")
